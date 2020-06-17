@@ -43,7 +43,7 @@ app.get('/', (req,res) =>{
 
 server.listen(process.env.PORT || 3000);
 
-const users = {};
+const users = [];
 function findUser(id) {
     for (var i=0; i < users.length; i++) {
         if (users[i].id == id) {
