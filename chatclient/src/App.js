@@ -42,7 +42,7 @@ function App() {
 
 
   useEffect(() => {
-    socket.current = io.connect("/");
+    socket.current = io.connect("/", { secure: true, reconnection: true, rejectUnauthorized: false });
     navigator.mediaDevices.getUserMedia({ video: true, audio: true}).then( stream => {
       setStream(stream);
       if (userVideo.current) {
