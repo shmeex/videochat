@@ -44,18 +44,30 @@ app.get('/', (req,res) =>{
 server.listen(process.env.PORT || 3000);
 
 const users = {};
-
+function findUser(id) {
+    for (var i=0; i < users.length; i++) {
+        if (users[i].id == id) {
+            console.log('found');
+            return users[i];    
+        }
+    }
+}
 //io.origins('*:*');
 
 io.on("connection", socket => {
-    if (!users[socket.id]) {
-        users[socket.id] = socket.id;
-    };
+    const found = users.some(user => {
+        user.id === socket.id
+    })
+    if (!found) {
+        users.push({id: socket.id, name: ''});
+        socket.emit("yourUSER", findUser(socket.id));    
+    }
 
-    socket.emit("yourID", socket.id);
+    console.log('users', users);
+    
     io.sockets.emit("allUsers", users);
     socket.on("disconnect", () => {
-        delete users[socket.id];
+        delete users.pop(findUser(socket.id))
     });
 
     socket.on("callUser", (data) => {
@@ -66,6 +78,12 @@ io.on("connection", socket => {
         io.to(data.to).emit("callAccepted", data.signal);
     });
 
+    socket.on("changeName", (data) => {
+        let user = findUser(socket.id)
+        user.name = data
+        console.log('changed name', data, users)
+        io.sockets.emit("allUsers", users);
+    });
 });
 
 console.log("server is running on port 3000");
