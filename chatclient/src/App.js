@@ -39,21 +39,88 @@ function App() {
   const partnerVideo = useRef();
   const socket = useRef();
 
+  const constraints = window.constraints = {
+    audio: false,
+    video: true,
+    facingMode: 'user'
+  };  
+  
+ 
+  
 
 
   useEffect(() => {
     socket.current = io.connect("/", { secure: true, reconnection: true, rejectUnauthorized: false });
-    navigator.mediaDevices.getUserMedia({ video: true, audio: true}).then( stream => {
-      setStream(stream);
-      if (userVideo.current) {
-        userVideo.current.srcObject = stream;
-      }
-    });
+    // navigator.mediaDevices.getUserMedia({ video: true, audio: true}).then( stream => {
+    //   setStream(stream);
+    //   if (userVideo.current) {
+    //     userVideo.current.srcObject = stream;
+    //   }
+    // });
 
+    // async function puss() {
+    //   console.log('puss');
+      
+    //       await navigator.mediaDevices.getUserMedia(constraints).then(stream => {
+    //         setStream(stream)
+    //       }).catch(e => {
+    //         console.log('eerrr',e);
+    //       })
+    //       console.log('stream', stream);
+    //       setStream(stream)
+    //       handleSuccess(stream);
+    //   }
+ 
+    function handleSuccess(usermedia) {
+      console.log('succes');
+      const video = userVideo
+      const videoTracks = usermedia.getVideoTracks();
+      console.log('Got stream with constraints:', constraints);
+      console.log(`Using video device: ${videoTracks[0].label}`);
+      window.usermedia = usermedia; // make variable available to browser console
+      video.srcObject = usermedia;
+      setStream(usermedia);
+  
+    }
+    
+    function handleError(error) {
+      console.log('errr');
+      if (error.name === 'ConstraintNotSatisfiedError') {
+        const v = constraints.video;
+        errorMsg(`The resolution ${v.width.exact}x${v.height.exact} px is not supported by your device.`);
+      } else if (error.name === 'PermissionDeniedError') {
+        errorMsg('Permissions have not been granted to use your camera and ' +
+          'microphone, you need to allow the page access to your devices in ' +
+          'order for the demo to work.');
+      }
+      errorMsg(`getUserMedia error: ${error.name}`, error);
+    }
+    
+    function errorMsg(msg, error) {
+      if (typeof error !== 'undefined') {
+        console.error(error);
+      }
+    }  
+
+    async function init() {
+      try {
+        let usermedia = await navigator.mediaDevices.getUserMedia(constraints);
+        setStream(usermedia);
+        handleSuccess(usermedia);
+        //e.target.disabled = true;
+      } catch (error) {
+        //handleError(e);
+        console.log('er', error)
+      }
+    } 
+
+  
     socket.current.on("yourUSER", user => {
       console.log('event myId', user)
       setYourID(user.id);
       setYourName(user.name);
+    init();
+
     });
 
     socket.current.on("allUsers", users => {
@@ -69,8 +136,11 @@ function App() {
       setCaller(data.from);
       setCallerSignal(data.signal);
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+
 
   function callPeer(id) {
     const peer = new Peer({
@@ -181,9 +251,57 @@ function App() {
       return (<button key={user.id} onClick={() => callPeer(user.id)}> Call {user.name} </button>);
     })
   })
+  // function handleSuccess(stream) {
+  //   console.log('succes');
+  //   const video = userVideo
+  //   const videoTracks = stream.getVideoTracks();
+  //   console.log('Got stream with constraints:', constraints);
+  //   console.log(`Using video device: ${videoTracks[0].label}`);
+  //   window.stream = stream; // make variable available to browser console
+  //   video.srcObject = stream;
+  //   setStream(stream);
+
+  // }
+  
+  // function handleError(error) {
+  //   console.log('errr');
+  //   if (error.name === 'ConstraintNotSatisfiedError') {
+  //     const v = constraints.video;
+  //     errorMsg(`The resolution ${v.width.exact}x${v.height.exact} px is not supported by your device.`);
+  //   } else if (error.name === 'PermissionDeniedError') {
+  //     errorMsg('Permissions have not been granted to use your camera and ' +
+  //       'microphone, you need to allow the page access to your devices in ' +
+  //       'order for the demo to work.');
+  //   }
+  //   errorMsg(`getUserMedia error: ${error.name}`, error);
+  // }
+  
+  // function errorMsg(msg, error) {
+  //   if (typeof error !== 'undefined') {
+  //     console.error(error);
+  //   }
+  // }  
+  // const constraints = window.constraints = {
+  //   audio: false,
+  //   video: true,
+  //   facingMode: 'user'
+  // };  
+  // async function init(e) {
+  //   try {
+  //     const stream = await navigator.mediaDevices.getUserMedia(constraints);
+  //     handleSuccess(stream);
+  //     e.target.disabled = true;
+  //   } catch (e) {
+  //     handleError(e);
+  //   }
+  // } 
+   
+
   return (
     <Container>
       <h1> WELCOME TO MS CHAT </h1>
+      {/* <button onClick={ (e) => { init(e)}}> ADD VIDEO </button>         */}
+
       <Row>
         {UserVideo}
         {PartnerVideo}
